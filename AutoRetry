@@ -1,0 +1,69 @@
+public static <T> Optional<T> autoRetry(@NonNull final DoWork<T> task, @NonNull final Optional<Predicate<T>> resultRejector) {
+
+        for (int retry = 0; retry <= StaticData.NETWORK_RETRY; ++retry) {
+
+            try {
+
+                Thread.sleep(retry * StaticData.NETWORK_CALL_WAIT);
+                final T resultAfterWork = task.doWork();
+                /**
+                 * If the result was not
+                 * desirable we RETRY.
+                  */
+                if(resultRejector.isPresent() && resultRejector.get().apply(resultAfterWork))
+                    continue;
+                /**
+                 * Else we return
+                 */
+                return Optional.fromNullable(resultAfterWork);
+            } catch (InterruptedException | UnknownHostException e) {
+                e.printStackTrace(); //To be replaced by proper logging
+                return Optional.absent();
+            } catch (IOException e) {
+                e.printStackTrace(); //To be replaced by proper logging
+            }
+        }
+        return Optional.absent();
+    }
+/////////////////////////////////////    
+    public abstract class DoWork<T> {
+    protected abstract T doWork() throws IOException;
+}
+/////////////////////////////////////
+/////////////USAGE
+/////////////////////////////////////
+public static boolean updateGCM(final long id, final WeakReference<Context> reference) {
+
+final String regId = autoRetry(new DoWork<String>() {
+    @Override
+    protected String doWork() throws IOException {
+
+        final Context context = reference.get();
+        if(context == null)
+            return "QUIT";
+        return GoogleCloudMessaging.getInstance(context)
+                .register("XXXXXXXXXX");
+    }
+}, Optional.<Predicate<String>>of(new Predicate<String>() {
+    @Override
+    public boolean apply(@Nullable String input) {
+        return TextUtils.isEmpty(input); //I need to retry if the returned GCM ID was null/empty
+    }
+})).orNull();
+//Context becomes null when the application is exited
+//If retires failed or application exited, we return
+if(TextUtils.isEmpty(regId) || regId.equals("QUIT"))
+    return false;
+
+Log.i("Ayush", "Uploading newGcmId to server");
+final Boolean result = autoRetry(new DoWork<Boolean>() {
+    @Override
+    protected Boolean doWork() throws IOException {
+
+        //if everything is fine, send id to server
+        return true;
+    }
+}, Optional.<Predicate<Boolean>>absent()).orNull(); //No need of predicate hence send absent
+
+return !(result == null || !result);
+}
