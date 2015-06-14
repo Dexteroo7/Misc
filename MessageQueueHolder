@@ -1,0 +1,49 @@
+package reach.project.reachProcess.auxiliaryClasses;
+
+import com.google.common.base.Optional;
+
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Created by Dexter on 14-05-2015.
+ */
+public class MessageQueueHolder<T> {
+
+    public MessageQueueHolder(int initialSize) {
+        messageSet = Collections.newSetFromMap(new ConcurrentHashMap<T, Boolean>());
+    }
+    public MessageQueueHolder() {
+        messageSet = Collections.newSetFromMap(new ConcurrentHashMap<T, Boolean>());
+    }
+    private final Set<T> messageSet;
+
+    /**
+     * @param message to be inserted
+     * @return if message already present returns false
+     */
+    public boolean insertMessage(T message) {
+        return messageSet.add(message);
+    }
+
+    /**
+     * @return returns the optional message and removes it
+     */
+    public Optional<T> takeMessage() {
+        final Iterator<T> iterator = messageSet.iterator();
+        if(!iterator.hasNext())
+            return Optional.absent();
+        final T message = iterator.next();
+        iterator.remove();
+        return Optional.of(message); //message can't be null
+    }
+
+    /**
+     * Clear the message set
+     */
+    public void clear() {
+        messageSet.clear();
+    }
+}
