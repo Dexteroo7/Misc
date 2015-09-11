@@ -1,0 +1,24 @@
+    public static void closeQuietly(Collection... collections) {
+        if (collections == null || collections.length == 0)
+            return;
+        for (Collection collection : collections)
+            if (collection != null)
+                collection.clear();
+    }
+
+    public static void closeQuietly(Closeable... closeables) {
+        for (Closeable closeable : closeables)
+            if (closeable != null)
+                try {
+                    closeable.close();
+                } catch (IOException ignored) {
+                }
+    }
+
+    public static void closeQuietly(Closeable closeable) {
+        if (closeable != null)
+            try {
+                closeable.close();
+            } catch (IOException ignored) {
+            }
+    }
