@@ -1,0 +1,80 @@
+public static <T extends Context, Result> Optional<Result> useContextFromContext(final WeakReference<T> reference,
+                                                                                     final UseContext<Result, T> task) {
+
+        final T context;
+        if (reference == null || (context = reference.get()) == null)
+            return Optional.absent();
+
+        final boolean isActivity = context instanceof Activity;
+        final boolean activityIsFinishing = (isActivity && ((Activity) context).isFinishing());
+        if (activityIsFinishing)
+            return Optional.absent();
+
+        return Optional.fromNullable(task.work(context));
+    }
+
+    public static <T extends Fragment, Result> Optional<Result> useContextFromFragment(final WeakReference<T> reference,
+                                                                                       final UseContext<Result, Activity> task) {
+
+        final T fragment;
+        if (reference == null || (fragment = reference.get()) == null)
+            return Optional.absent();
+
+        final Activity activity = fragment.getActivity();
+        if (activity == null || activity.isFinishing())
+            return Optional.absent();
+
+        return Optional.fromNullable(task.work(activity));
+    }
+
+    public static <T extends Fragment, Result> Optional<Result> useFragment(final WeakReference<T> reference,
+                                                                            final UseFragment<Result, T> task) {
+
+        final T fragment;
+        if (reference == null || (fragment = reference.get()) == null)
+            return Optional.absent();
+
+        final Activity activity = fragment.getActivity();
+        if (activity == null || activity.isFinishing())
+            return Optional.absent();
+
+        return Optional.fromNullable(task.work(fragment));
+    }
+
+    public static <T extends Activity> void runOnUiThread(final WeakReference<T> reference,
+                                                          final UseContext<Void, T> task) {
+
+        final T activity;
+        if (reference == null || (activity = reference.get()) == null || activity.isFinishing())
+            return;
+
+        activity.runOnUiThread(() -> task.work(activity));
+    }
+
+    public static <T extends Fragment> void runOnUiThreadFragment(final WeakReference<T> reference,
+                                                                  final UseContext<Void, Activity> task) {
+
+        final T fragment;
+        if (reference == null || (fragment = reference.get()) == null)
+            return;
+
+        final Activity activity = fragment.getActivity();
+        if (activity == null || activity.isFinishing())
+            return;
+
+        activity.runOnUiThread(() -> task.work(activity));
+    }
+
+    public static <T extends Fragment> void runOnUiThreadFragment(final WeakReference<T> reference,
+                                                                  final UseFragment<Void, T> task) {
+
+        final T fragment;
+        if (reference == null || (fragment = reference.get()) == null)
+            return;
+
+        final Activity activity = fragment.getActivity();
+        if (activity == null || activity.isFinishing())
+            return;
+
+        activity.runOnUiThread(() -> task.work(fragment));
+    }
