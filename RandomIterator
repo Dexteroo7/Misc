@@ -1,0 +1,53 @@
+public final class RandomIterator<T> implements Iterator<T> {
+
+    //recursion stack
+    private final LinkedList<int[]> offsets = new LinkedList<>();
+
+    private final ThreadLocalRandom random = ThreadLocalRandom.current();
+    private final T[] words;
+
+    public RandomIterator(T[] words) {
+
+        this.words = words;
+
+        //add default lower and upper bound
+        offsets.add(new int[]{0, words.length});
+    }
+
+    @Override
+    public boolean hasNext() {
+        return !offsets.isEmpty();
+    }
+
+    private int getRandomIndex() {
+        return offsets.size() <= 1 ? 0 : random.nextInt(0, offsets.size());
+    }
+
+    @Override
+    public T next() {
+
+        final int[] offset = offsets.remove(getRandomIndex());
+
+        final int upperBound = offset[1];
+        final int lowerBound = offset[0];
+
+        final T toReturn;
+
+        if (lowerBound + 1 == upperBound) {
+
+            //range contains only 1 index
+            toReturn = words[lowerBound];
+        } else {
+
+            final int randomIndex = random.nextInt(lowerBound, upperBound);
+            toReturn = words[randomIndex];
+
+            if (randomIndex + 1 < upperBound)
+                offsets.add(getRandomIndex(), new int[]{randomIndex + 1, upperBound});
+            if (randomIndex > lowerBound)
+                offsets.add(getRandomIndex(), new int[]{lowerBound, randomIndex});
+        }
+
+        return toReturn;
+    }
+}
