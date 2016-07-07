@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
+ * Compact packing of prices, when "most" lie between {-99.99, 99.99} and have no more than 2 decimal digits
  * 9999   -> 0010 0111 0000 1111
  * -9999  -> 1101 1000 1111 0001
  * BIT14  -> 0100 0000 0000 0000
