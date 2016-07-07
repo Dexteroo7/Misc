@@ -1,3 +1,6 @@
+package com.ayush.newsfeed.backend;
+
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.ThreadLocalRandom;
@@ -5,20 +8,27 @@ import java.util.concurrent.ThreadLocalRandom;
 /**
  * Created by dexter on 14/06/2016.
  */
-public final class RandomIterator<T> implements Iterator<T> {
+public class RandomIterator<T> implements Iterator<T> {
 
-    //recursion stack
-    private final LinkedList<int[]> offsets = new LinkedList<>();
-
-    private final ThreadLocalRandom random = ThreadLocalRandom.current();
+    private final LinkedList<Integer> offsets = new LinkedList<>();
+    protected final ThreadLocalRandom random = ThreadLocalRandom.current();
     private final T[] words;
 
     public RandomIterator(T[] words) {
 
         this.words = words;
 
-        //add default lower and upper bound
-        offsets.add(new int[]{0, words.length});
+        for (int index = 0; index < words.length; index++)
+            offsets.add(index);
+    }
+
+    public RandomIterator(Collection<T> words) {
+
+        //noinspection unchecked
+        this.words = (T[]) words.toArray();
+
+        for (int index = 0; index < this.words.length; index++)
+            offsets.add(index);
     }
 
     @Override
@@ -27,34 +37,13 @@ public final class RandomIterator<T> implements Iterator<T> {
     }
 
     private int getRandomIndex() {
-        return offsets.size() <= 1 ? 0 : random.nextInt(0, offsets.size());
+        return random.nextInt(0, offsets.size());
     }
 
     @Override
     public T next() {
 
-        final int[] offset = offsets.remove(getRandomIndex());
-
-        final int upperBound = offset[1];
-        final int lowerBound = offset[0];
-
-        final T toReturn;
-
-        if (lowerBound + 1 == upperBound) {
-
-            //range contains only 1 index
-            toReturn = words[lowerBound];
-        } else {
-
-            final int randomIndex = random.nextInt(lowerBound, upperBound);
-            toReturn = words[randomIndex];
-
-            if (randomIndex + 1 < upperBound)
-                offsets.add(getRandomIndex(), new int[]{randomIndex + 1, upperBound});
-            if (randomIndex > lowerBound)
-                offsets.add(getRandomIndex(), new int[]{lowerBound, randomIndex});
-        }
-
-        return toReturn;
+        final int index = offsets.remove(getRandomIndex());
+        return words[index];
     }
 }
