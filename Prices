@@ -1,0 +1,89 @@
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
+/**
+ * 9999   -> 0010 0111 0000 1111
+ * -9999  -> 1101 1000 1111 0001
+ * BIT14  -> 0100 0000 0000 0000
+ * 0x3FFF -> 0011 1111 1111 1111
+ *
+ * 0x4000 -> 0100 0000 0000 0000
+ * 0xFF   -> 0000 0000 1111 1111
+ *
+ * Created by dexter on 06/07/2016.
+ */
+public class Prices {
+
+    private static final BigDecimal HUNDRED = new BigDecimal("100");
+    private static final BigDecimal MINUS_HUNDRED = new BigDecimal("-100");
+
+    private static final int BIT14 = 0x4000; //15th bit used as a flag
+
+    //bit 15=0, bit 14=sign, bits 13-0: abs(value) (enough to fit -16384 : 16383)
+    private static short pack9999(final short val) {
+
+        if (val >= 0)
+            return val;
+
+        final short unsigned = (short) -val;
+        return (short) (BIT14 | unsigned);  //0x4000 - bit 14 set
+    }
+
+    private static short unpack9999(final short val) {
+
+        final int sign = val & BIT14;   //check if bit 14 is set (negative number)
+        final int value = val & 0x3FFF; //value is stored only in 14 bits
+        return (short) (sign == 0 ? value : -value);
+    }
+
+    private static void writePriceSigned(final ByteBuffer buffer, final double price) {
+
+        //decimal32 because we are only interested in 1-4 digits price. They easily fit in 32 bits
+        final BigDecimal bdVal = new BigDecimal(price, MathContext.DECIMAL32).stripTrailingZeros();
+        //precision = 4 - no more than 4 digits; scale=2 - no more than 2 decimal digits (disallow 0.375)
+        if (bdVal.precision() > 4 || bdVal.scale() > 2 || bdVal.compareTo(MINUS_HUNDRED) <= 0 || bdVal.compareTo(HUNDRED) >= 0) {
+            //for long values - write price with negative sign
+            buffer.put((byte) 0xFF).putDouble(price);
+        } else {
+            //we have up to 4 digits long number with up to 2 decimal digits. Multiply it by 100 to get cents.
+            final BigDecimal scaled = bdVal.scaleByPowerOfTen(2);
+            try {
+                buffer.putShort(pack9999(scaled.shortValueExact())); //[-9999, 9999] 14th bit will not be set
+            } catch (ArithmeticException ex) {
+                buffer.put((byte) 0xFF).putDouble(price);
+            }
+        }
+    }
+
+    private static double readPriceSigned(final ByteBuffer buffer) {
+
+        final short shortRes = buffer.getShort();
+        System.out.print("Read value " + shortRes);
+        if (shortRes >= 0)
+            return unpack9999(shortRes) / 100.0;
+        //go 1 byte back and read a double value
+        buffer.position(buffer.position() - 1);
+        return buffer.getDouble();
+    }
+
+    public static void main(String [] args) {
+
+        final double[] testValues = {0.075, 0.999, -0.999, 0.07, -0.07, 98.82, -98.82, 0.7, 0.1,
+                1, 7, 0.17, 0.77, 0.007, 100, -100, 101, -101, 0.001, 10, -10};
+        final ByteBuffer buf = ByteBuffer.allocate(testValues.length * 8).order(ByteOrder.BIG_ENDIAN);
+        //write test values to buffer
+        for (final double d : testValues)
+            writePriceSigned(buf, d);
+        buf.flip();
+        //read them back, assure they are the same
+        for (double testValue : testValues) {
+            final double v = readPriceSigned(buf);
+            System.out.println(" Final  value " + v);
+            if (v != testValue) {
+                System.err.println("Failed for " + testValue);
+            }
+        }
+    }
+}
