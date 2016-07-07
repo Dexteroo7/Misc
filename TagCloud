@@ -1,0 +1,143 @@
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.Set;
+
+/**
+ * Since we won't have a lot of products this model will do
+ * Created by dexter on 01/06/2016.
+ */
+public enum Tag {
+
+    CATEGORY,
+    PRODUCT,
+
+    ELECTRONICS(CATEGORY),
+    HOME_AND_FURNITURE(CATEGORY),
+
+    APPLIANCES(HOME_AND_FURNITURE),
+    /****/AC(APPLIANCES, ELECTRONICS),
+    /********/WINDOW_AC_MODEL_NUMBER(PRODUCT, AC),
+    /********/SPLIT_AC_MODEL_NUMBER(PRODUCT, AC),
+    /********/TOWER_AC_MODEL_NUMBER(PRODUCT, AC),
+    /****/REFRIGERATOR(APPLIANCES, ELECTRONICS),
+    /********/DOUBLE_DOOR_FRIDGE(PRODUCT, REFRIGERATOR),
+    /********/SINGLE_DOOR_FRIDGE(PRODUCT, REFRIGERATOR),
+    /****/AIR_COOLER(APPLIANCES),
+    /********/SMALL_AIR_COOLER(PRODUCT, AIR_COOLER),
+    /********/LARGE_AIR_COOLER(PRODUCT, AIR_COOLER),
+
+    FURNITURE(HOME_AND_FURNITURE),
+    /****/TABLE(PRODUCT, FURNITURE),
+    /****/CHAIR(PRODUCT, FURNITURE),
+
+    MOBILE_PHONE(ELECTRONICS),
+    /****/IPHONE6_16GB(PRODUCT, MOBILE_PHONE),
+    /****/IPHONE6_64GB(PRODUCT, MOBILE_PHONE),
+    /****/IPHONE6_PLUS_16GB(PRODUCT, MOBILE_PHONE),
+    /****/IPHONE6_PLUS_64GB(PRODUCT, MOBILE_PHONE),
+    /****/IPHONE6S_16GB(PRODUCT, MOBILE_PHONE),
+    /****/IPHONE6S_64GB(PRODUCT, MOBILE_PHONE),
+    /****/IPHONE6S_PLUS_16GB(PRODUCT, MOBILE_PHONE),
+    /****/IPHONE6S_PLUS_64GB(PRODUCT, MOBILE_PHONE),
+    /****/IPHONE_SE_16GB(PRODUCT, MOBILE_PHONE),
+    /****/IPHONE_SE_64GB(PRODUCT, MOBILE_PHONE),
+    /****/IPHONE5_16GB(PRODUCT, MOBILE_PHONE),
+    /****/IPHONE5_32GB(PRODUCT, MOBILE_PHONE),
+    /****/IPHONE5S_16GB(PRODUCT, MOBILE_PHONE),
+    /****/IPHONE5S_32GB(PRODUCT, MOBILE_PHONE),
+
+    LAPTOP(ELECTRONICS),
+    /****/MACBOOK_MF839HN(PRODUCT, LAPTOP),
+    /****/MACBOOK_MD101LL(PRODUCT, LAPTOP),
+    /****/MACBOOK_MJVE2HN(PRODUCT, LAPTOP),
+    /****/MACBOOK_MD101HN(PRODUCT, LAPTOP),
+
+    TABLET(ELECTRONICS),
+    /****/KINDLE_PAPERWHITE_WIFI(PRODUCT, TABLET);
+
+    ////////////////////////////////////////////
+    ////////////////////////////////////////////
+
+    private Set<Tag> parents = new HashSet<>();
+    private Set<Tag> children = new HashSet<>();
+
+    Tag(Tag... parents) {
+
+        if (parents.length == 0)
+            return;
+
+        Collections.addAll(this.parents, parents);
+        for (Tag parent : this.parents)
+            parent.children.add(this);
+    }
+
+    /**
+     * convert set to a memory efficient "EnumSet" before using
+     */
+    static {
+
+        for (Tag tag : values()) {
+
+            tag.parents = tag.parents.isEmpty() ? EnumSet.noneOf(Tag.class) : EnumSet.copyOf(tag.parents);
+            tag.children = tag.children.isEmpty() ? EnumSet.noneOf(Tag.class) : EnumSet.copyOf(tag.children);
+        }
+    }
+
+    public Set<Tag> getParents() {
+
+        return parents;
+    }
+
+    public Set<Tag> getChildren() {
+
+        return children;
+    }
+
+    ////////////////////////////////////////////
+    ////////////////////////////////////////////
+
+    public boolean isImmediateChildOf(Tag other) {
+        return other.children.contains(this);
+    }
+
+    public boolean isChildOf(Tag other) {
+
+        if (isImmediateChildOf(other))
+            return true;
+
+        for (Tag children : other.children)
+            if (isChildOf(children))
+                return true;
+
+        return false;
+    }
+
+    public boolean isImmediateParentOf(Tag other) {
+        return other.isImmediateChildOf(this);
+    }
+
+    public boolean isParentOf(Tag other) {
+
+        return other.isChildOf(this);
+    }
+
+    public EnumSet<Tag> getAllChildren() {
+
+        return addChildren(this, EnumSet.noneOf(Tag.class));
+    }
+
+    private static EnumSet<Tag> addChildren(Tag current, EnumSet<Tag> children) {
+
+        children.addAll(current.children);
+        for (Tag child : current.children)
+            addChildren(child, children);
+
+        return children;
+    }
+
+//    @Override
+//    public String toString() {
+//        return name() + "\nparents : " + MiscUtils.enumToString(parents) + "\nchildren : " + MiscUtils.enumToString(children);
+//    }
+}
