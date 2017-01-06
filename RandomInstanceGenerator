@@ -1,0 +1,44 @@
+	private static <T> T random(Class<?> recordClass) {
+
+		Constructor<?>[] constructors = recordClass.getConstructors();
+		Constructor<?> maxParamConstructor = constructors[0];
+
+		for (Constructor<?> check : constructors) {
+			if (check.getParameterCount() > maxParamConstructor.getParameterCount())
+				maxParamConstructor = check;
+		}
+
+		if (maxParamConstructor.getParameterCount() > 0) {
+
+			Type[] types = maxParamConstructor.getGenericParameterTypes();
+			Object[] params = new Object[types.length];
+
+			for (int index = 0; index < types.length; index++) {
+				params[index] = getRandom(types[index].getTypeName());
+			}
+
+			return (T) maxParamConstructor.newInstance(params);
+		} else
+			return (T) recordClass.newInstance();
+	}
+
+	private static Object getRandom(String type) {
+
+		switch (type) {
+
+			//TODO add others
+			case "java.lang.Long":
+				return ThreadLocalRandom.current().nextLong();
+			case "java.lang.Boolean":
+				return ThreadLocalRandom.current().nextBoolean();
+			case "java.lang.String":
+				return UUID.randomUUID().toString();
+			case "java.lang.CharSequence":
+				return UUID.randomUUID().toString();
+			case "java.lang.Double":
+				return ThreadLocalRandom.current().nextDouble();
+
+			default:
+				return random(Class.forName(type));
+		}
+	}
