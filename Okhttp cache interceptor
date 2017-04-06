@@ -1,0 +1,16 @@
+public interface CurrencyConverter {
+
+	Interceptor CACHE_CONTROL_INTERCEPTOR = chain -> chain.proceed(chain.request())
+														  .newBuilder()
+														  .header("Cache-Control", String.format("max-age=%d, max-stale=%d", 3600, 0))
+														  .build();
+
+	OkHttpClient HTTP_CLIENT = new OkHttpClient.Builder()
+			.cache(new Cache(new File(System.getProperty("java.io.tmpdir")), 1024 * 1024 * 10))
+			.addNetworkInterceptor(CACHE_CONTROL_INTERCEPTOR)
+			.build();
+
+	BigDecimal getConversionFactor(String currencyFrom, String currencyTo) throws IOException;
+
+	BigDecimal convert(String currencyFrom, String currencyTo, BigDecimal value) throws IOException;
+}
