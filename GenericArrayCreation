@@ -1,0 +1,1 @@
+list.toArray((T[]) Array.newInstance(list.get(0).getClass(), list.size()))
