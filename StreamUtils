@@ -1,0 +1,30 @@
+import javaslang.Tuple;
+import javaslang.Tuple2;
+import javaslang.Tuple3;
+
+import java.util.Collection;
+import java.util.Map;
+import java.util.stream.Stream;
+
+public interface StreamUtils {
+
+	static <T, R> Stream<Tuple2<T, R>> unzip(Map.Entry<T, ? extends Collection<R>> data) {
+		return data.getValue().stream().map(d -> Tuple.of(data.getKey(), d));
+	}
+
+	static <T, R> Stream<Tuple2<T, R>> unzip(Tuple2<T, ? extends Collection<R>> data) {
+		return data._2.stream().map(d -> Tuple.of(data._1, d));
+	}
+
+	static <T, R> Stream<Tuple2<T, R>> unzip2(Tuple2<T, Stream<R>> data) {
+		return data._2.map(d -> Tuple.of(data._1, d));
+	}
+
+	static <T, R, S> Stream<Tuple3<T, R, S>> unzip(Tuple3<T, R, ? extends Collection<S>> data) {
+		return data._3.stream().map(d -> Tuple.of(data._1, data._2, d));
+	}
+
+	static <T, R> Stream<Tuple2<T, R>> toTupleStream(Stream<Map.Entry<T, R>> entryStream) {
+		return entryStream.map(entry -> Tuple.of(entry.getKey(), entry.getValue()));
+	}
+}
