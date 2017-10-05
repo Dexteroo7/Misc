@@ -1,5 +1,3 @@
-package com.ixigo.common.util;
-
 import com.google.common.collect.Range;
 
 import java.util.Iterator;
