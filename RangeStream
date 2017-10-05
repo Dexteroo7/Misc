@@ -1,0 +1,58 @@
+package com.ixigo.common.util;
+
+import com.google.common.collect.Range;
+
+import java.util.Iterator;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
+/**
+ * Created by ayushverma on 09/06/17.
+ */
+public class RangeStream {
+
+	/**
+	 * TODO make end non-inclusive version
+	 * both lower and upper endpoint are inclusive
+	 *
+	 * @param range the range to iterate
+	 * @param next  function to generate successive values
+	 * @param <T>   comparable type
+	 * @return value from lower to upper,inclusive
+	 */
+	public static <T extends Object & Comparable<? super T>> Stream<T> between(Range<T> range, Function<T, T> next) {
+
+		return between(range.lowerEndpoint(), range.upperEndpoint(), next);
+	}
+
+	public static <T extends Object & Comparable<? super T>> Set<T> betweenAsSet(Range<T> range, Function<T, T> next) {
+		return between(range, next).collect(Collectors.toSet());
+	}
+
+	public static <T extends Object & Comparable<? super T>> Set<T> betweenAsSet(T start, T end, Function<T, T> next) {
+		return between(start, end, next).collect(Collectors.toSet());
+	}
+
+	//TODO make end non-inclusive version
+	public static <T extends Object & Comparable<? super T>> Stream<T> between(T start, T end, Function<T, T> next) {
+
+		Iterable<T> iterable = () -> new Iterator<T>() {
+
+			T current = null;
+
+			@Override
+			public boolean hasNext() {
+				return current == null || current.compareTo(end) < 0;
+			}
+
+			@Override
+			public T next() {
+				return current = (current == null ? start : next.apply(current));
+			}
+		};
+		return StreamSupport.stream(iterable.spliterator(), false);
+	}
+}
