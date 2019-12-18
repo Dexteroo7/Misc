@@ -1,0 +1,22 @@
+    public static void main(String[] args) throws InvalidProtocolBufferException {
+
+        final Properties props = new Properties();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "kafka-read.grappler.eu-west-1.prod.aws.skyscanner.local:9092");
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "KafkaExampleConsumer");
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
+        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+        // Create the consumer using props.
+        final Consumer<byte[], byte[]> consumer = new KafkaConsumer<>(props);
+        consumer.subscribe(Collections.singleton("public.acorn.funnel_events.clients.View"));
+        ConsumerRecords<byte[], byte[]> poll;
+        int count = 0;
+        while ((poll = consumer.poll(Duration.ofSeconds(1))) != null) {
+            for (ConsumerRecord<byte[], byte[]> consumerRecord : poll) {
+                byte[] value = consumerRecord.value();
+                Clients.Search search = Clients.Search.parseFrom(value);
+                count++;
+            }
+        }
+    }
